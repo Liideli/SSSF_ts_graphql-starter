@@ -1,14 +1,18 @@
+import {GraphQLError} from 'graphql';
 import {Category, Species} from '../../types/DBTypes';
 import categoryModel from '../models/categoryModel';
-
-// TODO: categoryResolver
 
 export default {
   Species: {
     category: async (parent: Species): Promise<Category> => {
       const category = await categoryModel.findById(parent.category);
       if (!category) {
-        throw new Error('Category not found');
+        throw new GraphQLError('Category not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: {status: 404},
+          },
+        });
       }
       return category;
     },

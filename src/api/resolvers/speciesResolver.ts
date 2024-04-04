@@ -1,5 +1,4 @@
-// TODO: speciesResolver
-
+import {GraphQLError} from 'graphql';
 import {Animal, Species} from '../../types/DBTypes';
 import speciesModel from '../models/speciesModel';
 
@@ -23,7 +22,12 @@ export default {
     ): Promise<Species> => {
       const species = await speciesModel.findById(args.id);
       if (!species) {
-        throw new Error('Species not found');
+        throw new GraphQLError('Animal not found', {
+          extensions: {
+            code: 'NOT_FOUND',
+            http: {status: 404},
+          },
+        });
       }
       return species;
     },
@@ -33,11 +37,19 @@ export default {
       _parent: undefined,
       args: {species: Omit<Species, '_id'>},
     ): Promise<{message: string; species?: Species}> => {
-      const species = await speciesModel.create(args.species);
-      if (species) {
+      try {
+        const species = await speciesModel.create(args.species);
+        if (!species) {
+          return {message: 'Species not added'};
+        }
         return {message: 'Species added', species};
-      } else {
-        return {message: 'Species not added'};
+      } catch (error) {
+        throw new GraphQLError((error as Error).message, {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            http: {status: 400},
+          },
+        });
       }
     },
     modifySpecies: async (

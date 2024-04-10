@@ -2,7 +2,6 @@ type User {
   id: ID
   user_name: String
   email: String
-  password: String
 }
 
 type UserResponse {
@@ -28,9 +27,15 @@ input UserModifyInput {
   password: String
 }
 
+type LoginResponse {
+  token: String
+  user: User
+  message: String!
+}
+
 type Mutation {
   register(user: UserInput!): UserResponse
-  login(email: String!, password: String!): UserResponse
+  login(email: String!, password: String!): LoginResponse
   deleteUser(id: ID!): UserResponse
   modifyUser(user: UserInput!, id: ID!): UserResponse
 }

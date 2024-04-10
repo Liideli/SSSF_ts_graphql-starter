@@ -25,7 +25,6 @@ input AnimalInput {
   species: ID!
   birthdate: DateTime!
   gender: Gender!
-  owner: ID!
   image: String!
   location: PointInput!
 }

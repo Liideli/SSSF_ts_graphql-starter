@@ -6,6 +6,7 @@ import {Species, UserWithoutPassword} from './types/DBTypes';
 import fetchData from './lib/fetchData';
 import {ImageFromWikipedia} from './types/ImageFromWikipedia';
 import jwt from 'jsonwebtoken';
+import {MyContext} from './types/MyContext';
 
 const notFound = (req: Request, _res: Response, next: NextFunction) => {
   const error = new CustomError(`🔍 - Not Found - ${req.originalUrl}`, 404);
@@ -51,30 +52,32 @@ const authenticate = async (
 ) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      next(new CustomError('No auth header provided', 401));
+    if (!process.env.JWT_SECRET) {
+      next(new CustomError('JWT secret not set', 500));
       return;
+    }
+    if (!authHeader) {
+      res.locals.user = {};
+      return next();
     }
     // using bearer token
     const token = authHeader.split(' ')[1];
     if (!token) {
-      next(new CustomError('No token provided', 401));
-      return;
-    }
-    if (!process.env.JWT_SECRET) {
-      next(new CustomError('JWT secret not set', 500));
-      return;
+      res.locals.user = {};
+      return next();
     }
     const tokenContent = jwt.verify(
       token,
       process.env.JWT_SECRET,
     ) as UserWithoutPassword;
     // optionally check if the user is still in the database
-
-    res.locals.user = tokenContent;
+    console.log('authenticating', tokenContent);
+    const context: MyContext = {userdata: tokenContent};
+    res.locals.user = context;
     next();
   } catch (error) {
-    next(new CustomError('Not authorized', 401));
+    res.locals.user = {};
+    next();
   }
 };
 

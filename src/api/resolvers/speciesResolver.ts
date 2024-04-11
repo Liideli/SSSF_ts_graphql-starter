@@ -1,6 +1,8 @@
 import {GraphQLError} from 'graphql';
 import {Animal, Species} from '../../types/DBTypes';
 import speciesModel from '../models/speciesModel';
+import { MyContext } from '../../types/MyContext';
+import animalModel from '../models/animalModel';
 
 export default {
   Animal: {
@@ -69,7 +71,18 @@ export default {
     deleteSpecies: async (
       _parent: undefined,
       args: {id: string},
+      context: MyContext,
     ): Promise<{message: string; species?: Species}> => {
+      if (!context.userdata || context.userdata.role !== 'admin') {
+        throw new GraphQLError('User not authorized', {
+          extensions: {
+            code: 'UNAUTHORIZED',
+          },
+        });
+      }
+      // delete animald that belong to this species
+      await animalModel.deleteMany({species: args.id});
+
       const species = await speciesModel.findByIdAndDelete(args.id);
       if (species) {
         return {message: 'Species deleted', species};
